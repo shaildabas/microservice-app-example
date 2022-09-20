@@ -36,6 +36,10 @@ services:
       JWT_SECRET: myfancysecret
       REDIS_HOST: redis-queue
       REDIS_PORT: 6379
+      DB_HOST: ${DB_HOST}
+      DB_USER: ${DB_USER}
+      DB_PWD: ${DB_PWD}
+      DB_NAME: ${DB_NAME}
       REDIS_CHANNEL: log_channel
       ZIPKIN_URL: http://zipkin:9411/api/v2/spans
     depends_on:
