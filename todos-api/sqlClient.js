@@ -41,22 +41,38 @@ class SqlClient {
         this._lastUsedID = todo.id;
     }
 
-    delete (id) {
+    delete (id_str) {
         var sqlStmt = "DELETE from " + this._table + " where ID = @ID";
         var request = new sql.Request();
+		var id = parseInt(id_str);
+		console.log(id_str);
+		console.log(id);
         request.input('ID', sql.Int, id).query(sqlStmt, function(err, result) {
             if (err) console.log('[delete] ' + err);
-            return result.recordset;
         });
     }
 
     list () {
-        var sqlStmt = "SELECT ID, Message from " + this._table + ";"
+        var sqlStmt = "SELECT * from " + this._table + ";"
         var request = new sql.Request();
+		var data = {}
         request.query(sqlStmt, function(err, result) {
             if (err) console.log('[list]' + err);
-            console.log('[list] result: ' + result);
-            return result;
+            console.log(result.recordset.length);
+			for (const item of result.recordsets) {
+				console.log(item.length);
+				console.log(item[0]);
+				console.log(item[0]);
+				console.log(item[0]);
+				const todo = {
+					id: item.ID,
+					content: item.Message
+				}
+				data[item.ID] = todo
+			}
+			console.log('Data:')
+			console.log(data)
+            return data;
         });
     }
 

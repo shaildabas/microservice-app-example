@@ -18,7 +18,9 @@ class TodoControllerSql {
     list (req, res) {
 		console.log("ID: " + req.user.userID + " Name: " + req.user.username)
         const client = this._getSqlClient(req.user.username)
-        res.json(client.list())
+		var data = client.list()
+		console.log(data);
+        res.json(data)
     }
 
     create (req, res) {
@@ -39,7 +41,8 @@ class TodoControllerSql {
     }
 
     delete (req, res) {
-		console.log("ID: " + req.user.userID + " Name: " + req.user.username)
+		console.log("ID: " + req.user.userID + " Name: " + req.user.username + " taskId: " + req.params.taskId)
+		console.log(req)
         const client = this._getSqlClient(req.user.username)
         client.delete(req.params.taskId)
         this._setSqlClient(req.user.username, client)
