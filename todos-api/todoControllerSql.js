@@ -16,13 +16,15 @@ class TodoControllerSql {
 
     // TODO: these methods are not concurrent-safe
     list (req, res) {
-        const client = this._getSqlClient(req.user.userID)
+		console.log("ID: " + req.user.userID + " Name: " + req.user.username)
+        const client = this._getSqlClient(req.user.username)
         res.json(client.list())
     }
 
     create (req, res) {
         // TODO: must be transactional and protected for concurrent access, but
         // the purpose of the whole example app it's enough
+		console.log("ID: " + req.user.userID + " Name: " + req.user.username)
         const client = this._getSqlClient(req.user.username)
         var id = client.getNextID()
         const todo = {
@@ -37,6 +39,7 @@ class TodoControllerSql {
     }
 
     delete (req, res) {
+		console.log("ID: " + req.user.userID + " Name: " + req.user.username)
         const client = this._getSqlClient(req.user.username)
         client.delete(req.params.taskId)
         this._setSqlClient(req.user.username, client)
