@@ -20,6 +20,8 @@ class SqlClient {
         this._table = userName;
         this._connect()
         this._fireDummy()
+        console.log('Connected, creating table');
+        this._createTable()
     }
 
     _connect() {
@@ -32,7 +34,6 @@ class SqlClient {
                     console.log('[_connect] Connected');
                 }
             });
-            console.log('Connected, creating table');
         } catch (err) {
             console.log('[_connect::catch]');
             console.log(err);
