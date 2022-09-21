@@ -18,36 +18,53 @@ var config = {
 class SqlClient {
     constructor (userName) {
         this._table = userName;
-        console.log("User " + process.env.DB_USER + " connecting to " + process.env.DB_NAME + " on " + process.env.DB_HOST)
-        try {
-            sql.connect(config, function (err) {
-                if (err) console.log('[_connect] ' + err);
-            });
-            console.log('Connected, creating table');
-        } catch (err) {
-            console.log('[Constructor::catch]');
-            console.log(err);
-        }
+        this._connected = false
+        this._connect()
         this._createTable()
         this._lastUsedID = 0
     }
 
+    _connect() {
+        if (this._connected == true)    return;
+        console.log("User " + process.env.DB_USER + " connecting to " + process.env.DB_NAME + " on " + process.env.DB_HOST)
+        try {
+            sql.connect(config, function (err) {
+                this._connected = true;
+                if (err) {
+                    console.log('[_connect] ' + err);
+                    this._connected = false
+                }
+            });
+            console.log('Connected, creating table');
+        } catch (err) {
+            console.log('[_connect::catch]');
+            console.log(err);
+            this._connected = false;
+        }
+    }
+
     create (todo) {
+        this._connect()
         var sqlStmt = "INSERT into " + this._table + " VALUES (@ID, @Message);"
         var request = new sql.Request();
         this._lastUsedID = todo.id;
         try {
             request.input('Message', sql.VarChar(100), todo.content).input('ID', sql.Int, todo.id).query(sqlStmt, function(err, result) {
-                if (err) console.log('[create] ' + err);
+                if (err) {
+                    console.log('[create] ' + err);
+                    this._connected = false;
+                }
                 console.log(result);
             });
         } catch(err) {
             console.log('[_createTable::catch]');
             console.log(err);
+            this._connected = false
         }
     }
 
     delete (id_str) {
+        this._connect()
         var sqlStmt = "DELETE from " + this._table + " where ID = @ID";
         var request = new sql.Request();
         var id = parseInt(id_str);
@@ -55,21 +72,29 @@ class SqlClient {
         console.log(id);
         try{
             request.input('ID', sql.Int, id).query(sqlStmt, function(err, result) {
-                if (err) console.log('[delete] ' + err);
+                if (err) {
+                    console.log('[delete] ' + err);
+                    this._connected = false
+                }
             });
         } catch(err) {
             console.log('[delete::catch]');
             console.log(err);
+            this._connected = false
         }
     }
 
     list (res, callback) {
+        this._connect()
         var sqlStmt = "SELECT * from " + this._table + ";"
         var request = new sql.Request();
         var data = {}
         try{
             request.query(sqlStmt, function(err, result) {
-                if (err) console.log('[list]' + err);
+                if (err) {
+                    console.log('[list]' + err);
+                    this._connected = false
+                }
                 console.log(result.recordset.length + ' todos are there');
                 for (const items of result.recordsets) {
                     for (const item of items) {
@@ -87,10 +112,12 @@ class SqlClient {
         } catch(err) {
             console.log('[list::catch]');
             console.log(err);
+            this._connected = false
         }
     }
 
     _createTable() {
+        this._connect()
         //var sqlStmt = "if OBJECT_ID ('" + this._table + "', 'U') is null CREATE TABLE " + this._table + "(ID int, Message varchar(100));"
         var sqlStmt = "if OBJECT_ID ('demotable4', 'U') is null create table dbo.demotable4 (c1 int, c2 varchar(100));"
         var request = new sql.Request();
@@ -98,11 +125,13 @@ class SqlClient {
             request.query(sqlStmt, function(err, result) {
                 if (err) {
                     console.log('[_createTable]' + err);
+                    this._connected = false
                 }
             });
         } catch(err) {
             console.log('[_createTable::catch]');
             console.log(err);
+            this._connected = false
         }
     }
 
