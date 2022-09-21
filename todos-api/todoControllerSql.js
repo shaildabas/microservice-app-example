@@ -6,7 +6,7 @@ const cache = require('memory-cache');
 const cache2 = require('memory-cache');
 const {Annotation, 
     jsonEncoder: {JSON_V2}} = require('zipkin');
-const SqlClient = require('./sqlClient');
+const SqlClient = require('./sqlClient2');
 
 const OPERATION_CREATE = 'CREATE',
       OPERATION_DELETE = 'DELETE';
@@ -17,13 +17,14 @@ class TodoControllerSql {
         this._redisClient = redisClient;
         this._logChannel = logChannel;
         this._mutex = new Mutex();
+        this._client = new SqlClient();
     }
 
     // TODO: these methods are not concurrent-safe
     list (req, res) {
         console.log("UserName: " + req.user.username)
         const client = this._getSqlClient(req.user.username).client
-        client.list(res, this.listReturn)
+        client.list(req.user.username, res, this.listReturn)
     }
     
     listReturn (data, res) {
@@ -36,26 +37,22 @@ class TodoControllerSql {
         // TODO: must be transactional and protected for concurrent access, but
         // the purpose of the whole example app it's enough
         console.log("Name: " + req.user.username)
-        var data = this._getSqlClient(req.user.username)
-        const client = data.client
-        const id = data.nextId
+        var nextId = this._getNextId(req.user.username)
+        const id = nextId
         const todo = {
             content: req.body.content,
             id: id
         }
-        data.nextId++
-        client.create(todo)
-        this._setSqlClient(req.user.username, data)
+        nextId++
+        this._client.create(req.user.username, todo)
+        this._setNextId(req.user.username, nextId)
         this._logOperation(OPERATION_CREATE, req.user.username, id)
         res.json(todo)
     }
 
     delete (req, res) {
         console.log("Name: " + req.user.username + " taskId: " + req.params.taskId)
-        var data = this._getSqlClient(req.user.username)
-        var client = data.client
-        client.delete(req.params.taskId)
-        this._setSqlClient(req.user.username, data)
+        this._client.delete(req.params.taskId)
         this._logOperation(OPERATION_DELETE, req.user.username, req.params.taskId)
         res.status(204)
         res.send()
@@ -73,27 +70,22 @@ class TodoControllerSql {
         })
     }
     
-    _getSqlClient (userID) {
-        var data = cache.get(userID)
-        if (data == null) {
+    _getNextId (userID) {
+        var nextId = cache.get(userID)
+        if (nextId == null) {
             this._mutex.acquire();
-            data = cache.get(userID)
-            if (data == null) {
-                data = {
-                    nextId: 1,
-                    client: new SqlClient(userID)
-                }
-                var i = 0;
-                while (i < 1000000000) i+=1;
-                this._setSqlClient(userID, data)
+            nextId = cache.get(userID)
+            if (nextId == null) {
+                nextId = 1
+                this._setNextId(userID, nextId)
             }
             this._mutex.release();
         }
-        return data
+        return nextId
     }
 
-    _setSqlClient (userID, data) {
-        cache.put(userID, data)
+    _setNextId (userID, nextId) {
+        cache.put(userID, nextId)
     }
 }
 
