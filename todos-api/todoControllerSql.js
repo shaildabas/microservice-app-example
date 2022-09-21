@@ -1,6 +1,6 @@
 'use strict';
 
-import { mutex } from 'async-mutex';
+var Mutex = require('async-mutex').Mutex;
 
 const cache = require('memory-cache');
 const {Annotation, 

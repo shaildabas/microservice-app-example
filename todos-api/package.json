@@ -6,6 +6,7 @@
   "scripts": {
     "start": "nodemon server.js"
   },
+  "type": "module",
   "author": "elgris <iddqd07@yandex.ru>",
   "license": "MIT",
   "dependencies": {
