@@ -18,24 +18,24 @@ var config = {
 class SqlClient {
     constructor (userName) {
         this._table = userName;
-        this._connect()
+        this._connect('[constructor]')
         this._fireDummy()
         console.log('Connected, creating table');
         this._createTable()
     }
 
-    _connect() {
-        console.log("[_connect] User " + process.env.DB_USER + " connecting to " + process.env.DB_NAME + " on " + process.env.DB_HOST)
+    _connect(msg) {
+        console.log(msg + " [_connect] User " + process.env.DB_USER + " connecting to " + process.env.DB_NAME + " on " + process.env.DB_HOST)
         try {
             sql.connect(config, function (err) {
                 if (err) {
-                    console.log('[_connect] ' + err);
+                    console.log(msg + ' [_connect] ' + err);
                 } else {
-                    console.log('[_connect] Connected');
+                    console.log(msg + ' [_connect] Connected');
                 }
             });
         } catch (err) {
-            console.log('[_connect::catch]');
+            console.log(msg + ' [_connect::catch]');
             console.log(err);
         }
     }
@@ -47,19 +47,20 @@ class SqlClient {
         try {
             request.query(sqlStmt, function(err, result) {
                 if (err) {
-                    console.log('[list]' + err);
-                    connect()
+                    console.log('[_fireDummy]' + err);
+                    connect('[_fireDummy1]')
+                } else {
+                    console.log(result)
                 }
             });
         } catch (err) {
             console.log('[_fireDummy]')
             console.log(err)
-            connect()
+            connect('[_fireDummy2]')
         }
     }
 
     create (todo) {
-        this._connect()
         var sqlStmt = "INSERT into " + this._table + " VALUES (@ID, @Message);"
         var request = new sql.Request();
         this._nextID = todo.id+1;
@@ -68,7 +69,7 @@ class SqlClient {
             request.input('Message', sql.VarChar(100), todo.content).input('ID', sql.Int, todo.id).query(sqlStmt, function(err, result) {
                 if (err) {
                     console.log('[create] ' + err);
-                    connect()
+                    connect('[create1]')
                 } else {
                     console.log(result);
                 }
@@ -76,7 +77,7 @@ class SqlClient {
         } catch(err) {
             console.log('[_createTable::catch]');
             console.log(err);
-            connect()
+            connect('[create2]')
         }
     }
 
@@ -91,13 +92,13 @@ class SqlClient {
             request.input('ID', sql.Int, id).query(sqlStmt, function(err, result) {
                 if (err) {
                     console.log('[delete] ' + err);
-                    connect()
+                    connect('[delete1]')
                 }
             });
         } catch(err) {
             console.log('[delete::catch]');
             console.log(err)
-            connect()
+            connect('[delete2]')
         }
     }
 
@@ -110,7 +111,7 @@ class SqlClient {
             request.query(sqlStmt, function(err, result) {
                 if (err) {
                     console.log('[list]' + err);
-                    connect()
+                    connect('[list1]')
                 } else {
                     console.log(result.recordset.length + ' todos are there');
                     for (const items of result.recordsets) {
@@ -130,7 +131,7 @@ class SqlClient {
         } catch(err) {
             console.log('[_getToDos::catch]');
             console.log(err);
-            connect()
+            connect('[list2]')
         }
     }
 
@@ -144,13 +145,13 @@ class SqlClient {
             request.query(sqlStmt, function(err, result) {
                 if (err) {
                     console.log('[_createTable]' + err);
-                    connect()
+                    connect('[_createTable1]')
                 }
             });
         } catch(err) {
             console.log('[_createTable::catch]');
             console.log(err);
-            connect()
+            connect('[_createTable2]')
         }
     }
 }
