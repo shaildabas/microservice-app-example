@@ -16,10 +16,13 @@ class TodoControllerSql {
         this._redisClient = redisClient;
         this._logChannel = logChannel;
         this._mutex = new Mutex();
+        this._connected = false;
     }
 
     // TODO: these methods are not concurrent-safe
     list (req, res) {
+        var i = 1;
+        while (!this._connected) i = i+1;
         console.log("UserName: " + req.user.username)
         const client = this._getSqlClient(req.user.username).client
         client.list(res, this.listReturn)
@@ -32,6 +35,8 @@ class TodoControllerSql {
     }
 
     create (req, res) {
+        var i = 1;
+        while (!this._connected) i = i+1;
         // TODO: must be transactional and protected for concurrent access, but
         // the purpose of the whole example app it's enough
         console.log("Name: " + req.user.username)
@@ -71,7 +76,6 @@ class TodoControllerSql {
             }))
         })
     }
-
     
     _getSqlClient (userID) {
         var data = cache.get(userID)
@@ -84,6 +88,7 @@ class TodoControllerSql {
                     client: new SqlClient(userID)
                 }
                 this._setSqlClient(userID, data)
+                this._connected = true
             }
             this._mutex.release();
         }
