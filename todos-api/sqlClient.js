@@ -103,8 +103,8 @@ class SqlClient {
                     console.log('Data:')
                     console.log(data)
                 }
+                callback(data, res)
             });
-            callback(data, res)
         } catch(err) {
             console.log('[_getToDos::catch]');
             console.log(err);
