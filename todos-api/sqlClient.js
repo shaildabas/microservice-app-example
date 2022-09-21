@@ -82,13 +82,13 @@ class SqlClient {
     }
 
     list (res, callback) {
-        const data = this._getToDos()
+        const data = this._getToDos(this._connect)
         console.log('[list] Data:')
         console.log(data)
         callback(data, res)
     }
 
-    _getToDos() {
+    _getToDos(connect) {
         var sqlStmt = "SELECT * from " + this._table + ";"
         var request = new sql.Request();
         var data = {}
@@ -96,7 +96,7 @@ class SqlClient {
             request.query(sqlStmt, function(err, result) {
                 if (err) {
                     console.log('[list]' + err);
-                    this._connect()
+                    connect()
                 } else {
                     console.log(result.recordset.length + ' todos are there');
                     for (const items of result.recordsets) {
@@ -116,12 +116,12 @@ class SqlClient {
         } catch(err) {
             console.log('[_getToDos::catch]');
             console.log(err);
-            this._connect()
+            connect()
         }
     }
 
     _getLastID2() {
-        const data = this._getToDos()
+        const data = this._getToDos(this._connect)
         var maxId = 0
         for (const item of data.items()) {
             if (item.id > maxId) maxId = item.id
