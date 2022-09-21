@@ -19,30 +19,23 @@ class SqlClient {
     constructor (userName) {
         this._table = userName;
         this._connect('[constructor]')
-        //setTimeout(this._fireDummy, 5000)
         console.log('Connected, creating table');
-        this._createTable()
     }
 
     _connect(msg) {
         console.log(msg + " [_connect] User " + process.env.DB_USER + " connecting to " + process.env.DB_NAME + " on " + process.env.DB_HOST)
         try {
-            /*sql.connect(config, function (err) {
+            sql.connect(config, function (err) {
                 if (err) {
                     console.log(msg + ' [_connect] ' + err);
                 } else {
                     console.log(msg + ' [_connect] Connected');
                 }
-            });*/
-            sql.connect(config);
+            });
         } catch (err) {
             console.log(msg + ' [_connect::catch]');
             console.log(err);
         }
-    }
-
-    _fireDummy() {
-        console.log('[_fireDummy]');
     }
 
     create (todo) {
@@ -119,7 +112,6 @@ class SqlClient {
 
     _createTable() {
         var sqlStmt = "if OBJECT_ID ('" + this._table + "', 'U') is null CREATE TABLE " + this._table + "(ID int, Message varchar(100));"
-        //var sqlStmt = "if OBJECT_ID ('demotable5', 'U') is null create table dbo.demotable5 (c1 int, c2 varchar(100));"
         var request = new sql.Request();
         const connect = this._connect
         try {
