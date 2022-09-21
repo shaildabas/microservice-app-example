@@ -19,6 +19,7 @@ class SqlClient {
     constructor (userName) {
         this._table = userName;
         this._connect()
+        this._fireDummy()
     }
 
     _connect() {
@@ -38,16 +39,35 @@ class SqlClient {
         }
     }
 
+    _fireDummy() {
+        var sqlStmt = "SELECT * from " + this._table + ";"
+        var request = new sql.Request();
+        connect = this._connect
+        try {
+            request.query(sqlStmt, function(err, result) {
+                if (err) {
+                    console.log('[list]' + err);
+                    connect()
+                }
+            });
+        } catch (err) {
+            console.log('[_fireDummy]')
+            console.log(err)
+            connect()
+        }
+    }
+
     create (todo) {
         this._connect()
         var sqlStmt = "INSERT into " + this._table + " VALUES (@ID, @Message);"
         var request = new sql.Request();
         this._nextID = todo.id+1;
+        connect = this._connect
         try {
             request.input('Message', sql.VarChar(100), todo.content).input('ID', sql.Int, todo.id).query(sqlStmt, function(err, result) {
                 if (err) {
                     console.log('[create] ' + err);
-                    this._connect()
+                    connect()
                 } else {
                     console.log(result);
                 }
@@ -55,7 +75,7 @@ class SqlClient {
         } catch(err) {
             console.log('[_createTable::catch]');
             console.log(err);
-            this._connect()
+            connect()
         }
     }
 
@@ -65,17 +85,18 @@ class SqlClient {
         var id = parseInt(id_str);
         console.log(id_str);
         console.log(id);
+        connect = this._connect
         try {
             request.input('ID', sql.Int, id).query(sqlStmt, function(err, result) {
                 if (err) {
                     console.log('[delete] ' + err);
-                    this._connect()
+                    connect()
                 }
             });
         } catch(err) {
             console.log('[delete::catch]');
             console.log(err)
-            this._connect()
+            connect()
         }
     }
 
@@ -83,12 +104,12 @@ class SqlClient {
         var sqlStmt = "SELECT * from " + this._table + ";"
         var request = new sql.Request();
         var data = {}
-        var inError = false
+        connect = this._connect
         try {
             request.query(sqlStmt, function(err, result) {
                 if (err) {
                     console.log('[list]' + err);
-                    inError = true
+                    connect()
                 } else {
                     console.log(result.recordset.length + ' todos are there');
                     for (const items of result.recordsets) {
@@ -108,9 +129,8 @@ class SqlClient {
         } catch(err) {
             console.log('[_getToDos::catch]');
             console.log(err);
-            inError = true
+            connect()
         }
-        if (inError) this._connect()
     }
 
     _createTable() {
