@@ -18,17 +18,13 @@ var config = {
 class SqlClient {
     constructor (userName) {
         this._table = userName;
-        this._connect();
-		console.log('Connected, creating table');
-        this._lastUsedID = this._getLastID()
-    }
-
-    _connect() {
         console.log("User " + process.env.DB_USER + " connecting to " + process.env.DB_NAME + " on " + process.env.DB_HOST)
         sql.connect(config, function (err) {
             if (err) console.log('[_connect] ' + err);
         });
+        console.log('Connected, creating table');
         this._createTable()
+        this._lastUsedID = this._getLastID()
     }
 
     create (todo) {
@@ -36,7 +32,7 @@ class SqlClient {
         var request = new sql.Request();
         request.input('Message', sql.VarChar(100), todo.content).input('ID', sql.Int, todo.id).query(sqlStmt, function(err, result) {
             if (err) console.log('[create] ' + err);
-			console.log(result);
+            console.log(result);
         });
         this._lastUsedID = todo.id;
     }
@@ -44,9 +40,9 @@ class SqlClient {
     delete (id_str) {
         var sqlStmt = "DELETE from " + this._table + " where ID = @ID";
         var request = new sql.Request();
-		var id = parseInt(id_str);
-		console.log(id_str);
-		console.log(id);
+        var id = parseInt(id_str);
+        console.log(id_str);
+        console.log(id);
         request.input('ID', sql.Int, id).query(sqlStmt, function(err, result) {
             if (err) console.log('[delete] ' + err);
         });
@@ -55,28 +51,28 @@ class SqlClient {
     list (res, callback) {
         var sqlStmt = "SELECT * from " + this._table + ";"
         var request = new sql.Request();
-	var data = {}
+        var data = {}
         request.query(sqlStmt, function(err, result) {
-        	if (err) console.log('[list]' + err);
-	        console.log(result.recordset.length + ' todos are there');
-		for (const items of result.recordsets) {
-			for (const item of items) {
-				const todo = {
-					id: item.ID,
-					content: item.Message
-				}
-				data[item.ID] = todo
-			}
-		}
-		console.log('Data:')
-		console.log(data)
-		callback(data, res)
-	});
+            if (err) console.log('[list]' + err);
+            console.log(result.recordset.length + ' todos are there');
+            for (const items of result.recordsets) {
+                for (const item of items) {
+                    const todo = {
+                        id: item.ID,
+                        content: item.Message
+                    }
+                    data[item.ID] = todo
+                }
+            }
+            console.log('Data:')
+            console.log(data)
+            callback(data, res)
+    });
     }
 
     _createTable() {
         var sqlStmt = "if OBJECT_ID ('" + this._table + "', 'U') is null CREATE TABLE " + this._table + "(ID int, Message varchar(100));"
-		var request = new sql.Request();
+        var request = new sql.Request();
         request.query(sqlStmt, function(err, result) {
             if (err) {
                 console.log('[_createTable]' + err);
@@ -90,7 +86,7 @@ class SqlClient {
     }
 
     _getLastID() {
-	return 3;
+        return 3;
         var sqlStmt = "SELECT MAX(ID) from " + this._table + ";"
         var request = new sql.Request();
         var last = 0;
