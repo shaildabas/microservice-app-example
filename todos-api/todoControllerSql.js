@@ -47,11 +47,10 @@ class TodoControllerSql {
 
     delete (req, res) {
         console.log("Name: " + req.user.username + " taskId: " + req.params.taskId)
-        console.log(req)
-        const client = this._getSqlClient(req.user.username).client
+        var data = this._getSqlClient(req.user.username)
+        var client = data.client
         client.delete(req.params.taskId)
         this._setSqlClient(req.user.username, data)
-
         this._logOperation(OPERATION_DELETE, req.user.username, req.params.taskId)
         res.status(204)
         res.send()
