@@ -18,23 +18,18 @@ var config = {
 class SqlClient {
     constructor (userName) {
         this._table = userName;
-        this._connected = false
         this._connect()
-        this._lastUsedID = 0
+        this._nextID = this._getLastID2()+1
     }
 
     _connect() {
-        if (this._connected == true)    return;
-        var connected = true
         console.log("[_connect] User " + process.env.DB_USER + " connecting to " + process.env.DB_NAME + " on " + process.env.DB_HOST)
         try {
             sql.connect(config, function (err) {
                 connected = true;
                 if (err) {
                     console.log('[_connect] ' + err);
-                    connected = false
                 } else {
-                    connected = true
                     console.log('[_connect] Connected');
                 }
             });
@@ -42,22 +37,19 @@ class SqlClient {
         } catch (err) {
             console.log('[_connect::catch]');
             console.log(err);
-            connected = false;
         }
-        this._connected = connected
     }
 
     create (todo) {
         this._connect()
         var sqlStmt = "INSERT into " + this._table + " VALUES (@ID, @Message);"
         var request = new sql.Request();
-        this._lastUsedID = todo.id;
-        var connected = true
+        this._nextID = todo.id+1;
         try {
             request.input('Message', sql.VarChar(100), todo.content).input('ID', sql.Int, todo.id).query(sqlStmt, function(err, result) {
                 if (err) {
                     console.log('[create] ' + err);
-                    connected = false;
+                    this._connect()
                 } else {
                     console.log(result);
                 }
@@ -65,45 +57,39 @@ class SqlClient {
         } catch(err) {
             console.log('[_createTable::catch]');
             console.log(err);
-            connected = false
+            this._connect()
         }
-        this._connected = connected
     }
 
     delete (id_str) {
-        this._connect()
         var sqlStmt = "DELETE from " + this._table + " where ID = @ID";
         var request = new sql.Request();
         var id = parseInt(id_str);
         console.log(id_str);
         console.log(id);
-        var connected =true
         try {
             request.input('ID', sql.Int, id).query(sqlStmt, function(err, result) {
                 if (err) {
                     console.log('[delete] ' + err);
-                    connected = false
+                    this._connect()
                 }
             });
         } catch(err) {
             console.log('[delete::catch]');
-            console.log(err);
-            onnected = false
+            console.log(err)
+            this._connect()
         }
-        this._connected = connected
     }
 
     list (res, callback) {
-        this._connect()
         var sqlStmt = "SELECT * from " + this._table + ";"
         var request = new sql.Request();
         var data = {}
-        var connected = true
         try {
             request.query(sqlStmt, function(err, result) {
                 if (err) {
                     console.log('[list]' + err);
-                    connected = false
+                    this._connect()
                 } else {
                     console.log(result.recordset.length + ' todos are there');
                     for (const items of result.recordsets) {
@@ -123,9 +109,49 @@ class SqlClient {
         } catch(err) {
             console.log('[list::catch]');
             console.log(err);
-            connected = false
+            this._connect()
         }
-        this._connected = connected
+    }
+
+    _getToDos() {
+        var sqlStmt = "SELECT * from " + this._table + ";"
+        var request = new sql.Request();
+        var data = {}
+        try {
+            request.query(sqlStmt, function(err, result) {
+                if (err) {
+                    console.log('[list]' + err);
+                    this._connect()
+                } else {
+                    console.log(result.recordset.length + ' todos are there');
+                    for (const items of result.recordsets) {
+                        for (const item of items) {
+                            const todo = {
+                                id: item.ID,
+                                content: item.Message
+                            }
+                            data[item.ID] = todo
+                        }
+                    }
+                    console.log('Data:')
+                    console.log(data)
+                }
+                return data
+            });
+        } catch(err) {
+            console.log('[_getToDos::catch]');
+            console.log(err);
+            this._connect()
+        }
+    }
+
+    _getLastID2() {
+        var data = this._getToDos()
+        var maxId = 0
+        for (const item of data.items()) {
+            if (item.id > maxId) maxId = item.id
+        }
+        return maxId
     }
 
     _createTable() {
@@ -133,24 +159,22 @@ class SqlClient {
         //var sqlStmt = "if OBJECT_ID ('" + this._table + "', 'U') is null CREATE TABLE " + this._table + "(ID int, Message varchar(100));"
         var sqlStmt = "if OBJECT_ID ('demotable4', 'U') is null create table dbo.demotable4 (c1 int, c2 varchar(100));"
         var request = new sql.Request();
-        var connected = true
         try {
             request.query(sqlStmt, function(err, result) {
                 if (err) {
                     console.log('[_createTable]' + err);
-                    connected = false
+                    this._connect()
                 }
             });
         } catch(err) {
             console.log('[_createTable::catch]');
             console.log(err);
-            connected = false
+            this._connect()
         }
-        this._connected = connected;
     }
 
     getNextID() {
-        var id = this._lastUsedID + 1
+        var id = this._nextID
         return id
     }
 
@@ -159,12 +183,10 @@ class SqlClient {
         var request = new sql.Request();
         var last = 0;
         this._connect()
-        var connected = true
         try {
             request.query(sqlStmt, function(err, result) {
                 if (err) {
                     console.log('[_getLastID] ' + err);
-                    connected = false
                     this._connect()
                 } else {
                     console.log('[_getLastID]' + result.recordset[0]);
@@ -174,10 +196,8 @@ class SqlClient {
         } catch(err) {
             console.log('[_getLastID::catch]');
             console.log(err);
-            connected = false
             this._connect()
         }
-        this._connected = connected
         return last;
     }
 }
