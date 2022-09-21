@@ -41,38 +41,18 @@ class SqlClient {
     }
 
     _fireDummy() {
-        var sqlStmt = "SELECT * from " + this._table + ";"
-        var request = new sql.Request();
-        const connect = this._connect
-        try {
-            request.query(sqlStmt, function(err, result) {
-                if (err) {
-                    console.log('[_fireDummy]' + err);
-                    connect('[_fireDummy1]')
-                } else {
-                    console.log(result)
-                }
-            });
-        } catch (err) {
-            console.log('[_fireDummy]')
-            console.log(err)
-            connect('[_fireDummy2]')
-        }
+        console.log('[_fireDummy]');
     }
 
     create (todo) {
-        this._createTable()
         var sqlStmt = "INSERT into " + this._table + " VALUES (@ID, @Message);"
         var request = new sql.Request();
-        this._nextID = todo.id+1;
         const connect = this._connect
         try {
             request.input('Message', sql.VarChar(100), todo.content).input('ID', sql.Int, todo.id).query(sqlStmt, function(err, result) {
                 if (err) {
                     console.log('[create] ' + err);
                     connect('[create1]')
-                } else {
-                    console.log(result);
                 }
             });
         } catch(err) {
@@ -83,7 +63,6 @@ class SqlClient {
     }
 
     delete (id_str) {
-        this._createTable()
         var sqlStmt = "DELETE from " + this._table + " where ID = @ID";
         var request = new sql.Request();
         var id = parseInt(id_str);
@@ -105,7 +84,6 @@ class SqlClient {
     }
 
     list (res, callback) {
-        this._createTable()
         var sqlStmt = "SELECT * from " + this._table + ";"
         var request = new sql.Request();
         var data = {}
@@ -126,8 +104,6 @@ class SqlClient {
                             data[item.ID] = todo
                         }
                     }
-                    console.log('Data:')
-                    console.log(data)
                 }
                 callback(data, res)
             });
@@ -140,7 +116,7 @@ class SqlClient {
 
     _createTable() {
         //var sqlStmt = "if OBJECT_ID ('" + this._table + "', 'U') is null CREATE TABLE " + this._table + "(ID int, Message varchar(100));"
-        var sqlStmt = "if OBJECT_ID ('demotable4', 'U') is null create table dbo.demotable4 (c1 int, c2 varchar(100));"
+        var sqlStmt = "if OBJECT_ID ('demotable4', 'U') is null create table dbo.demotable5 (c1 int, c2 varchar(100));"
         var request = new sql.Request();
         const connect = this._connect
         try {
