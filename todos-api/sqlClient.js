@@ -6,8 +6,8 @@ var config = {
     database: process.env.DB_NAME,
     pool: {
         max: 10,
-        min: 0,
-        idleTimeoutMillis: 30000
+        min: 1,
+        idleTimeoutMillis: 300000
     },
     options: {
         encrypt: true,
@@ -19,9 +19,7 @@ class SqlClient {
     constructor (userName) {
         this._table = userName;
         this._connect('[constructor]')
-        // Wait for 5 seconds for connection to be established
-        DelayNode(5000)
-        this._fireDummy()
+        setTimeout(this._fireDummy(), 5000)
         console.log('Connected, creating table');
         this._createTable()
     }
