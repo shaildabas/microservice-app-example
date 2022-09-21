@@ -23,8 +23,7 @@ class TodoControllerSql {
     // TODO: these methods are not concurrent-safe
     list (req, res) {
         console.log("UserName: " + req.user.username)
-        const client = this._getSqlClient(req.user.username).client
-        client.list(req.user.username, res, this.listReturn)
+        this._client.list(req.user.username, res, this.listReturn)
     }
     
     listReturn (data, res) {
@@ -52,7 +51,7 @@ class TodoControllerSql {
 
     delete (req, res) {
         console.log("Name: " + req.user.username + " taskId: " + req.params.taskId)
-        this._client.delete(req.params.taskId)
+        this._client.delete(req.user.username, req.params.taskId)
         this._logOperation(OPERATION_DELETE, req.user.username, req.params.taskId)
         res.status(204)
         res.send()
