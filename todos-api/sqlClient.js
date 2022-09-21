@@ -20,20 +20,22 @@ class SqlClient {
         this._table = userName;
         this._connected = false
         this._connect()
-        //this._createTable()
         this._lastUsedID = 0
     }
 
     _connect() {
         if (this._connected == true)    return;
         var connected = true
-        console.log("User " + process.env.DB_USER + " connecting to " + process.env.DB_NAME + " on " + process.env.DB_HOST)
+        console.log("[_connect] User " + process.env.DB_USER + " connecting to " + process.env.DB_NAME + " on " + process.env.DB_HOST)
         try {
             sql.connect(config, function (err) {
                 connected = true;
                 if (err) {
                     console.log('[_connect] ' + err);
                     connected = false
+                } else {
+                    connected = true
+                    console.log('[_connect] Connected');
                 }
             });
             console.log('Connected, creating table');
@@ -56,8 +58,9 @@ class SqlClient {
                 if (err) {
                     console.log('[create] ' + err);
                     connected = false;
+                } else {
+                    console.log(result);
                 }
-                console.log(result);
             });
         } catch(err) {
             console.log('[_createTable::catch]');
@@ -101,20 +104,21 @@ class SqlClient {
                 if (err) {
                     console.log('[list]' + err);
                     connected = false
-                }
-                console.log(result.recordset.length + ' todos are there');
-                for (const items of result.recordsets) {
-                    for (const item of items) {
-                        const todo = {
-                            id: item.ID,
-                            content: item.Message
+                } else {
+                    console.log(result.recordset.length + ' todos are there');
+                    for (const items of result.recordsets) {
+                        for (const item of items) {
+                            const todo = {
+                                id: item.ID,
+                                content: item.Message
+                            }
+                            data[item.ID] = todo
                         }
-                        data[item.ID] = todo
                     }
+                    console.log('Data:')
+                    console.log(data)
+                    callback(data, res)
                 }
-                console.log('Data:')
-                console.log(data)
-                callback(data, res)
             });
         } catch(err) {
             console.log('[list::catch]');
@@ -151,20 +155,29 @@ class SqlClient {
     }
 
     _getLastID() {
-        return 3;
         var sqlStmt = "SELECT MAX(ID) from " + this._table + ";"
         var request = new sql.Request();
         var last = 0;
+        this._connect()
+        var connected = true
         try {
             request.query(sqlStmt, function(err, result) {
-                if (err) console.log('[_getLastID] ' + err);
-                console.log('[_getLastID]' + result.recordset[0]);
-                last = result.recordset[0];
+                if (err) {
+                    console.log('[_getLastID] ' + err);
+                    connected = false
+                    this._connect()
+                } else {
+                    console.log('[_getLastID]' + result.recordset[0]);
+                    last = result.recordset[0];
+                }
             });
         } catch(err) {
             console.log('[_getLastID::catch]');
             console.log(err);
+            connected = false
+            this._connect()
         }
+        this._connected = connected
         return last;
     }
 }
