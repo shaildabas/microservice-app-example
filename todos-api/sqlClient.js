@@ -19,22 +19,32 @@ class SqlClient {
     constructor (userName) {
         this._table = userName;
         console.log("User " + process.env.DB_USER + " connecting to " + process.env.DB_NAME + " on " + process.env.DB_HOST)
-        sql.connect(config, function (err) {
-            if (err) console.log('[_connect] ' + err);
-        });
-        console.log('Connected, creating table');
+        try {
+            sql.connect(config, function (err) {
+                if (err) console.log('[_connect] ' + err);
+            });
+            console.log('Connected, creating table');
+        } catch (err) {
+            console.log('[Constructor::catch]');
+            console.log(err);
+        }
         this._createTable()
-        this._lastUsedID = this._getLastID()
+        this._lastUsedID = 0
     }
 
     create (todo) {
         var sqlStmt = "INSERT into " + this._table + " VALUES (@ID, @Message);"
         var request = new sql.Request();
-        request.input('Message', sql.VarChar(100), todo.content).input('ID', sql.Int, todo.id).query(sqlStmt, function(err, result) {
-            if (err) console.log('[create] ' + err);
-            console.log(result);
-        });
         this._lastUsedID = todo.id;
+        try {
+            request.input('Message', sql.VarChar(100), todo.content).input('ID', sql.Int, todo.id).query(sqlStmt, function(err, result) {
+                if (err) console.log('[create] ' + err);
+                console.log(result);
+            });
+        } catch(err) {
+            console.log('[_createTable::catch]');
+            console.log(err);
+        }
     }
 
     delete (id_str) {
@@ -43,42 +53,57 @@ class SqlClient {
         var id = parseInt(id_str);
         console.log(id_str);
         console.log(id);
-        request.input('ID', sql.Int, id).query(sqlStmt, function(err, result) {
-            if (err) console.log('[delete] ' + err);
-        });
+        try{
+            request.input('ID', sql.Int, id).query(sqlStmt, function(err, result) {
+                if (err) console.log('[delete] ' + err);
+            });
+        } catch(err) {
+            console.log('[delete::catch]');
+            console.log(err);
+        }
     }
 
     list (res, callback) {
         var sqlStmt = "SELECT * from " + this._table + ";"
         var request = new sql.Request();
         var data = {}
-        request.query(sqlStmt, function(err, result) {
-            if (err) console.log('[list]' + err);
-            console.log(result.recordset.length + ' todos are there');
-            for (const items of result.recordsets) {
-                for (const item of items) {
-                    const todo = {
-                        id: item.ID,
-                        content: item.Message
+        try{
+            request.query(sqlStmt, function(err, result) {
+                if (err) console.log('[list]' + err);
+                console.log(result.recordset.length + ' todos are there');
+                for (const items of result.recordsets) {
+                    for (const item of items) {
+                        const todo = {
+                            id: item.ID,
+                            content: item.Message
+                        }
+                        data[item.ID] = todo
                     }
-                    data[item.ID] = todo
                 }
-            }
-            console.log('Data:')
-            console.log(data)
-            callback(data, res)
-    });
+                console.log('Data:')
+                console.log(data)
+                callback(data, res)
+            });
+        } catch(err) {
+            console.log('[list::catch]');
+            console.log(err);
+        }
     }
 
     _createTable() {
         //var sqlStmt = "if OBJECT_ID ('" + this._table + "', 'U') is null CREATE TABLE " + this._table + "(ID int, Message varchar(100));"
         var sqlStmt = "if OBJECT_ID ('demotable4', 'U') is null create table dbo.demotable4 (c1 int, c2 varchar(100));"
         var request = new sql.Request();
-        request.query(sqlStmt, function(err, result) {
-            if (err) {
-                console.log('[_createTable]' + err);
-            }
-        });
+        try {
+            request.query(sqlStmt, function(err, result) {
+                if (err) {
+                    console.log('[_createTable]' + err);
+                }
+            });
+        } catch(err) {
+            console.log('[_createTable::catch]');
+            console.log(err);
+        }
     }
 
     getNextID() {
@@ -91,11 +116,16 @@ class SqlClient {
         var sqlStmt = "SELECT MAX(ID) from " + this._table + ";"
         var request = new sql.Request();
         var last = 0;
-        request.query(sqlStmt, function(err, result) {
-            if (err) console.log('[_getLastID] ' + err);
-            console.log('[_getLastID]' + result.recordset[0]);
-            last = result.recordset[0];
-        });
+        try {
+            request.query(sqlStmt, function(err, result) {
+                if (err) console.log('[_getLastID] ' + err);
+                console.log('[_getLastID]' + result.recordset[0]);
+                last = result.recordset[0];
+            });
+        } catch(err) {
+            console.log('[_getLastID::catch]');
+            console.log(err);
+        }
         return last;
     }
 }
