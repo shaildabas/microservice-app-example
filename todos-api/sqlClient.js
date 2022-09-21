@@ -20,7 +20,7 @@ class SqlClient {
         this._table = userName;
         this._connected = false
         this._connect()
-        this._createTable()
+        //this._createTable()
         this._lastUsedID = 0
     }
 
