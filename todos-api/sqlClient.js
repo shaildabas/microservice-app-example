@@ -81,13 +81,6 @@ class SqlClient {
     }
 
     list (res, callback) {
-        const data = this._getToDos(this._connect)
-        console.log('[list] Data:')
-        console.log(data)
-        callback(data, res)
-    }
-
-    _getToDos(connect) {
         var sqlStmt = "SELECT * from " + this._table + ";"
         var request = new sql.Request();
         var data = {}
@@ -95,7 +88,7 @@ class SqlClient {
             request.query(sqlStmt, function(err, result) {
                 if (err) {
                     console.log('[list]' + err);
-                    connect()
+                    this._connect()
                 } else {
                     console.log(result.recordset.length + ' todos are there');
                     for (const items of result.recordsets) {
@@ -110,22 +103,42 @@ class SqlClient {
                     console.log('Data:')
                     console.log(data)
                 }
-                return data
             });
+            callback(data, res)
         } catch(err) {
             console.log('[_getToDos::catch]');
             console.log(err);
-            connect()
+            this._connect()
         }
     }
 
     _getLastID2() {
-        const data = this._getToDos(this._connect)
+        var sqlStmt = "SELECT * from " + this._table + ";"
+        var request = new sql.Request();
         var maxId = 0
-        for (const item of data.items()) {
-            if (item.id > maxId) maxId = item.id
+        try {
+            request.query(sqlStmt, function(err, result) {
+                if (err) {
+                    console.log('[list]' + err);
+                    this._connect()
+                } else {
+                    console.log(result.recordset.length + ' todos are there');
+                    for (const items of result.recordsets) {
+                        console.log('[_getLastID2] items:')
+                        for (const item of items) {
+                            console.log(item)
+                            if (item.ID > maxId) maxId = item.ID
+                            console.log('[_gli2] maxId: ' + maxId)
+                        }
+                    }
+                }
+            });
+            return maxId;
+        } catch(err) {
+            console.log('[_getToDos::catch]');
+            console.log(err);
+            this._connect()
         }
-        return maxId
     }
 
     _createTable() {
