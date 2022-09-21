@@ -42,7 +42,7 @@ class SqlClient {
     _fireDummy() {
         var sqlStmt = "SELECT * from " + this._table + ";"
         var request = new sql.Request();
-        connect = this._connect
+        const connect = this._connect
         try {
             request.query(sqlStmt, function(err, result) {
                 if (err) {
@@ -62,7 +62,7 @@ class SqlClient {
         var sqlStmt = "INSERT into " + this._table + " VALUES (@ID, @Message);"
         var request = new sql.Request();
         this._nextID = todo.id+1;
-        connect = this._connect
+        const connect = this._connect
         try {
             request.input('Message', sql.VarChar(100), todo.content).input('ID', sql.Int, todo.id).query(sqlStmt, function(err, result) {
                 if (err) {
@@ -85,7 +85,7 @@ class SqlClient {
         var id = parseInt(id_str);
         console.log(id_str);
         console.log(id);
-        connect = this._connect
+        const connect = this._connect
         try {
             request.input('ID', sql.Int, id).query(sqlStmt, function(err, result) {
                 if (err) {
@@ -104,7 +104,7 @@ class SqlClient {
         var sqlStmt = "SELECT * from " + this._table + ";"
         var request = new sql.Request();
         var data = {}
-        connect = this._connect
+        const connect = this._connect
         try {
             request.query(sqlStmt, function(err, result) {
                 if (err) {
@@ -138,17 +138,18 @@ class SqlClient {
         //var sqlStmt = "if OBJECT_ID ('" + this._table + "', 'U') is null CREATE TABLE " + this._table + "(ID int, Message varchar(100));"
         var sqlStmt = "if OBJECT_ID ('demotable4', 'U') is null create table dbo.demotable4 (c1 int, c2 varchar(100));"
         var request = new sql.Request();
+        const connect = this._connect
         try {
             request.query(sqlStmt, function(err, result) {
                 if (err) {
                     console.log('[_createTable]' + err);
-                    this._connect()
+                    connect()
                 }
             });
         } catch(err) {
             console.log('[_createTable::catch]');
             console.log(err);
-            this._connect()
+            connect()
         }
     }
 }
