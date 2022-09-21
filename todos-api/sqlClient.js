@@ -19,7 +19,7 @@ class SqlClient {
     constructor (userName) {
         this._table = userName;
         this._connect('[constructor]')
-        setTimeout(this._fireDummy(), 5000)
+        setTimeout(this._fireDummy, 5000)
         console.log('Connected, creating table');
         this._createTable()
     }

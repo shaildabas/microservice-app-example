@@ -16,6 +16,7 @@
     "mssql": "^9.0.1",
     "npm": "^8.19.2",
     "redis": "^2.8.0",
+    "async-mutex": "^0.3.2",
     "zipkin": "^0.11.2",
     "zipkin-context-cls": "^0.11.0",
     "zipkin-instrumentation-express": "^0.11.2",
