@@ -3,6 +3,7 @@
 var Mutex = require('async-mutex').Mutex;
 
 const cache = require('memory-cache');
+const cache2 = require('memory-cache');
 const {Annotation, 
     jsonEncoder: {JSON_V2}} = require('zipkin');
 const SqlClient = require('./sqlClient');
@@ -16,13 +17,10 @@ class TodoControllerSql {
         this._redisClient = redisClient;
         this._logChannel = logChannel;
         this._mutex = new Mutex();
-        this._connected = false;
     }
 
     // TODO: these methods are not concurrent-safe
     list (req, res) {
-        var i = 1;
-        while (!this._connected) i = i+1;
         console.log("UserName: " + req.user.username)
         const client = this._getSqlClient(req.user.username).client
         client.list(res, this.listReturn)
@@ -35,8 +33,6 @@ class TodoControllerSql {
     }
 
     create (req, res) {
-        var i = 1;
-        while (!this._connected) i = i+1;
         // TODO: must be transactional and protected for concurrent access, but
         // the purpose of the whole example app it's enough
         console.log("Name: " + req.user.username)
@@ -87,8 +83,9 @@ class TodoControllerSql {
                     nextId: 1,
                     client: new SqlClient(userID)
                 }
+                var i = 0;
+                while (i < 1000000000) i+=1;
                 this._setSqlClient(userID, data)
-                this._connected = true
             }
             this._mutex.release();
         }
