@@ -28,7 +28,7 @@ class SqlClient {
         sql.connect(config, function (err) {
             if (err) console.log('[_connect] ' + err);
         });
-        //this._createTable()
+        this._createTable()
     }
 
     create (todo) {
@@ -52,28 +52,26 @@ class SqlClient {
         });
     }
 
-    list () {
+    list (res, callback) {
         var sqlStmt = "SELECT * from " + this._table + ";"
         var request = new sql.Request();
-		var data = {}
+	var data = {}
         request.query(sqlStmt, function(err, result) {
-            if (err) console.log('[list]' + err);
-            console.log(result.recordset.length);
-			for (const item of result.recordsets) {
-				console.log(item.length);
-				console.log(item[0]);
-				console.log(item[0]);
-				console.log(item[0]);
+        	if (err) console.log('[list]' + err);
+	        console.log(result.recordset.length + ' todos are there');
+		for (const items of result.recordsets) {
+			for (const item of items) {
 				const todo = {
 					id: item.ID,
 					content: item.Message
 				}
 				data[item.ID] = todo
 			}
-			console.log('Data:')
-			console.log(data)
-            return data;
-        });
+		}
+		console.log('Data:')
+		console.log(data)
+		callback(data, res)
+	});
     }
 
     _createTable() {
@@ -92,7 +90,7 @@ class SqlClient {
     }
 
     _getLastID() {
-		return 3;
+	return 3;
         var sqlStmt = "SELECT MAX(ID) from " + this._table + ";"
         var request = new sql.Request();
         var last = 0;
