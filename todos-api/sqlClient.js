@@ -26,21 +26,23 @@ class SqlClient {
 
     _connect() {
         if (this._connected == true)    return;
+        var connected = true
         console.log("User " + process.env.DB_USER + " connecting to " + process.env.DB_NAME + " on " + process.env.DB_HOST)
         try {
             sql.connect(config, function (err) {
-                this._connected = true;
+                connected = true;
                 if (err) {
                     console.log('[_connect] ' + err);
-                    this._connected = false
+                    connected = false
                 }
             });
             console.log('Connected, creating table');
         } catch (err) {
             console.log('[_connect::catch]');
             console.log(err);
-            this._connected = false;
+            connected = false;
         }
+        this._connected = connected
     }
 
     create (todo) {
@@ -48,19 +50,21 @@ class SqlClient {
         var sqlStmt = "INSERT into " + this._table + " VALUES (@ID, @Message);"
         var request = new sql.Request();
         this._lastUsedID = todo.id;
+        var connected = true
         try {
             request.input('Message', sql.VarChar(100), todo.content).input('ID', sql.Int, todo.id).query(sqlStmt, function(err, result) {
                 if (err) {
                     console.log('[create] ' + err);
-                    this._connected = false;
+                    connected = false;
                 }
                 console.log(result);
             });
         } catch(err) {
             console.log('[_createTable::catch]');
             console.log(err);
-            this._connected = false
+            connected = false
         }
+        this._connected = connected
     }
 
     delete (id_str) {
@@ -70,18 +74,20 @@ class SqlClient {
         var id = parseInt(id_str);
         console.log(id_str);
         console.log(id);
+        var connected =true
         try {
             request.input('ID', sql.Int, id).query(sqlStmt, function(err, result) {
                 if (err) {
                     console.log('[delete] ' + err);
-                    this._connected = false
+                    connected = false
                 }
             });
         } catch(err) {
             console.log('[delete::catch]');
             console.log(err);
-            this._connected = false
+            onnected = false
         }
+        this._connected = connected
     }
 
     list (res, callback) {
@@ -89,11 +95,12 @@ class SqlClient {
         var sqlStmt = "SELECT * from " + this._table + ";"
         var request = new sql.Request();
         var data = {}
+        var connected = true
         try {
             request.query(sqlStmt, function(err, result) {
                 if (err) {
                     console.log('[list]' + err);
-                    this._connected = false
+                    connected = false
                 }
                 console.log(result.recordset.length + ' todos are there');
                 for (const items of result.recordsets) {
@@ -112,8 +119,9 @@ class SqlClient {
         } catch(err) {
             console.log('[list::catch]');
             console.log(err);
-            this._connected = false
+            connected = false
         }
+        this._connected = connected
     }
 
     _createTable() {
@@ -121,18 +129,20 @@ class SqlClient {
         //var sqlStmt = "if OBJECT_ID ('" + this._table + "', 'U') is null CREATE TABLE " + this._table + "(ID int, Message varchar(100));"
         var sqlStmt = "if OBJECT_ID ('demotable4', 'U') is null create table dbo.demotable4 (c1 int, c2 varchar(100));"
         var request = new sql.Request();
+        var connected = true
         try {
             request.query(sqlStmt, function(err, result) {
                 if (err) {
                     console.log('[_createTable]' + err);
-                    this._connected = false
+                    connected = false
                 }
             });
         } catch(err) {
             console.log('[_createTable::catch]');
             console.log(err);
-            this._connected = false
+            connected = false
         }
+        this._connected = connected;
     }
 
     getNextID() {
