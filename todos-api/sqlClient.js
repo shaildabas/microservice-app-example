@@ -19,6 +19,8 @@ class SqlClient {
     constructor (userName) {
         this._table = userName;
         this._connect('[constructor]')
+        // Wait for 5 seconds for connection to be established
+        DelayNode(5000)
         this._fireDummy()
         console.log('Connected, creating table');
         this._createTable()
@@ -61,6 +63,7 @@ class SqlClient {
     }
 
     create (todo) {
+        this._createTable()
         var sqlStmt = "INSERT into " + this._table + " VALUES (@ID, @Message);"
         var request = new sql.Request();
         this._nextID = todo.id+1;
@@ -82,6 +85,7 @@ class SqlClient {
     }
 
     delete (id_str) {
+        this._createTable()
         var sqlStmt = "DELETE from " + this._table + " where ID = @ID";
         var request = new sql.Request();
         var id = parseInt(id_str);
@@ -103,6 +107,7 @@ class SqlClient {
     }
 
     list (res, callback) {
+        this._createTable()
         var sqlStmt = "SELECT * from " + this._table + ";"
         var request = new sql.Request();
         var data = {}
@@ -136,7 +141,6 @@ class SqlClient {
     }
 
     _createTable() {
-        this._connect()
         //var sqlStmt = "if OBJECT_ID ('" + this._table + "', 'U') is null CREATE TABLE " + this._table + "(ID int, Message varchar(100));"
         var sqlStmt = "if OBJECT_ID ('demotable4', 'U') is null create table dbo.demotable4 (c1 int, c2 varchar(100));"
         var request = new sql.Request();
