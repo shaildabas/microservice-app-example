@@ -19,7 +19,6 @@ class SqlClient {
     constructor (userName) {
         this._table = userName;
         this._connect()
-        this._nextID = this._getLastID2()+1
     }
 
     _connect() {
@@ -114,37 +113,6 @@ class SqlClient {
         if (inError) this._connect()
     }
 
-    _getLastID2() {
-        var sqlStmt = "SELECT * from " + this._table + ";"
-        var request = new sql.Request();
-        var maxId = 0
-        var inError = false
-        try {
-            request.query(sqlStmt, function(err, result) {
-                if (err) {
-                    console.log('[list]' + err);
-                    inError = true
-                } else {
-                    console.log(result.recordset.length + ' todos are there');
-                    for (const items of result.recordsets) {
-                        console.log('[_getLastID2] items:')
-                        for (const item of items) {
-                            console.log(item)
-                            if (item.ID > maxId) maxId = item.ID
-                            console.log('[_gli2] maxId: ' + maxId)
-                        }
-                    }
-                }
-            });
-            return maxId;
-        } catch(err) {
-            console.log('[_getToDos::catch]');
-            console.log(err);
-            inError = true
-        }
-        if (inError) this._connect()
-    }
-
     _createTable() {
         this._connect()
         //var sqlStmt = "if OBJECT_ID ('" + this._table + "', 'U') is null CREATE TABLE " + this._table + "(ID int, Message varchar(100));"
@@ -162,34 +130,6 @@ class SqlClient {
             console.log(err);
             this._connect()
         }
-    }
-
-    getNextID() {
-        var id = this._nextID
-        return id
-    }
-
-    _getLastID() {
-        var sqlStmt = "SELECT MAX(ID) from " + this._table + ";"
-        var request = new sql.Request();
-        var last = 0;
-        this._connect()
-        try {
-            request.query(sqlStmt, function(err, result) {
-                if (err) {
-                    console.log('[_getLastID] ' + err);
-                    this._connect()
-                } else {
-                    console.log('[_getLastID]' + result.recordset[0]);
-                    last = result.recordset[0];
-                }
-            });
-        } catch(err) {
-            console.log('[_getLastID::catch]');
-            console.log(err);
-            this._connect()
-        }
-        return last;
     }
 }
 
