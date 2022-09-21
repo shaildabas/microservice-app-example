@@ -1,4 +1,7 @@
 'use strict';
+
+import { mutex } from 'async-mutex';
+
 const cache = require('memory-cache');
 const {Annotation, 
     jsonEncoder: {JSON_V2}} = require('zipkin');
@@ -12,6 +15,7 @@ class TodoControllerSql {
         this._tracer = tracer;
         this._redisClient = redisClient;
         this._logChannel = logChannel;
+        this._mutex = new Mutex();
     }
 
     // TODO: these methods are not concurrent-safe
@@ -72,11 +76,16 @@ class TodoControllerSql {
     _getSqlClient (userID) {
         var data = cache.get(userID)
         if (data == null) {
-            data = {
-                nextId: 1,
-                client: new SqlClient(userID)
+            this._mutex.acquire();
+            data = cache.get(userID)
+            if (data == null) {
+                data = {
+                    nextId: 1,
+                    client: new SqlClient(userID)
+                }
+                this._setSqlClient(userID, data)
             }
-            this._setSqlClient(userID, data)
+            this._mutex.release();
         }
         return data
     }
