@@ -70,7 +70,7 @@ class SqlClient {
         var id = parseInt(id_str);
         console.log(id_str);
         console.log(id);
-        try{
+        try {
             request.input('ID', sql.Int, id).query(sqlStmt, function(err, result) {
                 if (err) {
                     console.log('[delete] ' + err);
@@ -89,7 +89,7 @@ class SqlClient {
         var sqlStmt = "SELECT * from " + this._table + ";"
         var request = new sql.Request();
         var data = {}
-        try{
+        try {
             request.query(sqlStmt, function(err, result) {
                 if (err) {
                     console.log('[list]' + err);
