@@ -26,7 +26,6 @@ class SqlClient {
         console.log("[_connect] User " + process.env.DB_USER + " connecting to " + process.env.DB_NAME + " on " + process.env.DB_HOST)
         try {
             sql.connect(config, function (err) {
-                connected = true;
                 if (err) {
                     console.log('[_connect] ' + err);
                 } else {
