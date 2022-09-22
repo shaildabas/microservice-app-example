@@ -11,19 +11,43 @@ const SqlClient = require('./sqlClient2');
 const OPERATION_CREATE = 'CREATE',
       OPERATION_DELETE = 'DELETE';
 
+var sql = require('mssql');
+var config = {
+    user: process.env.DB_USER,
+    password: process.env.DB_PWD,
+    server: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+    pool: {
+        max: 10,
+        min: 1,
+        idleTimeoutMillis: 300000
+    },
+    options: {
+        encrypt: true,
+        trustServerCertificate: true
+    }
+};
+
+var mutex = new Mutex();
+
 class TodoControllerSql {
     constructor({tracer, redisClient, logChannel}) {
         this._tracer = tracer;
         this._redisClient = redisClient;
         this._logChannel = logChannel;
-        this._mutex = new Mutex();
-        this._client = new SqlClient();
+        this._connect('[constructor]', this._createTables);
+    }
+    
+    _createTables() {
+        this._createTable('admin')
+        this._createTable('johnd')
+        this._createTable('janed')
     }
 
     // TODO: these methods are not concurrent-safe
     list (req, res) {
         console.log("UserName: " + req.user.username)
-        this._client.list(req.user.username, res, function(data, res) {
+        this._getTodos(req.user.username, res, function(data, res) {
             res.json(data)
         });
     }
@@ -32,46 +56,43 @@ class TodoControllerSql {
         // TODO: must be transactional and protected for concurrent access, but
         // the purpose of the whole example app it's enough
         const username = req.user.username
-        console.log("Name: " + req.user.username)
         createTodo = this._createTodo
-        this._mutex.acquire()
+        mutex.acquire()
         var id = cache.get(userID)
         if (id == null) {
-            console.log('[create] Id mising')
-            this._client.getNextId(req, res, this._mutex, cache, createTodo)
+            console.log('[create] Id for ' + username + ' is mising')
+            mutex.release()
+            res.status(402)
+            res.send()
         } else {
-            cache.put(req.user.username, id+1)
+            cache.put(username, id+1)
             console.log('[create] Using id: ' + id)
-            this._mutex.release()
-            this._client.create(id, req, res, createTodo)
-        }
-    }
+            mutex.release()
 
-    _createTodo (id, req, res, success) {
-        if (success) {
-            console.log('[createTodo] todo with id ' + id + ' created successfully')
             var data = {}
             const todo = {
                 content: req.body.content,
                 id: id
             }
             data[id] = todo
-            this._logOperation(OPERATION_CREATE, req.user.username, id)
-            res.json(data)
-        } else {
-            console.log('[createTodo] failed to create todo with id ' + id)
-            res.json({})
+            logOperation = this._logOperation
+            this._createTodo(id, req, res, function(success) {
+                if (success) {
+                    console.log('[createTodo] todo with id ' + id + ' created successfully')
+                    logOperation(OPERATION_CREATE, username, id)
+                    res.json(data)
+                } else {
+                    console.log('[createTodo] failed to create todo with id ' + id)
+                    res.json({})
+                }
+            });
         }
     }
 
     delete (req, res) {
         console.log("Name: " + req.user.username + " taskId: " + req.params.taskId)
         logOperation = this._logOperation
-        this._client.delete(req.user.username, req.params.taskId, res, function(username, id, res, code) {
-            logOperation(OPERATION_DELETE, username, id)
-            res.status(code)
-            res.send()
-        });
+        this._deleteTodo(req.user.username, parseInt(req.params.taskId), res);
     }
 
     _logOperation (opName, username, todoId) {
@@ -84,6 +105,132 @@ class TodoControllerSql {
                 todoId: todoId,
             }))
         })
+    }
+
+    ///////////////////////////SQL methods//////////////////
+    
+    _connect(msg, createTables) {
+        console.log(msg + " [_connect] User " + config.user + " connecting to " + config.database + " on " + config.server)
+        try {
+            sql.connect(config, function (err) {
+                if (err) {
+                    console.log(msg + ' [_connect] ' + err);
+                } else {
+                    console.log(msg + ' [_connect] Connected');
+                    createTables()
+                }
+            });
+        } catch (err) {
+            console.log(msg + ' [_connect::catch]');
+            console.log(err);
+        }
+    }
+
+    _createTable(username) {
+        var sqlStmt = "if OBJECT_ID ('" + username + "', 'U') is null CREATE TABLE " + username + "(ID int, Message varchar(100));"
+        var request = new sql.Request();
+        const connect = this._connect
+        try {
+            request.query(sqlStmt, function(err, result) {
+                if (err) {
+                    console.log('[_createTable]' + err);
+                    connect('[_createTable]', () => {})
+                }
+            });
+        } catch(err) {
+            console.log('[_createTable::catch]');
+            console.log(err);
+            connect('[_createTable]', () => {})
+        }
+    }
+
+    _getTodos (username, res, returnResult) {
+        var sqlStmt = "SELECT * from " + username + ";"
+        var request = new sql.Request();
+        var data = {}
+        const connect = this._connect
+        try {
+            request.query(sqlStmt, function(err, result) {
+                if (err) {
+                    console.log('[_getToDos]' + err);
+                    connect('[_getToDos]', () => {})
+                    returnResult(data, res)
+                } else {
+                    console.log(result.recordset.length + ' todos are there');
+                    var maxId = 0
+                    for (const items of result.recordsets) {
+                        for (const item of items) {
+                            if (maxId < item.ID) maxId = item.ID;
+                            const todo = {
+                                id: item.ID,
+                                content: item.Message
+                            }
+                            data[item.ID] = todo
+                        }
+                    }
+                    mutex.acquire();
+                    if (cache.get(username) == null) cache.put(username, maxId+1);
+                    mutex.release();
+                }
+                returnResult(data, res)
+            });
+        } catch(err) {
+            console.log('[_getToDos::catch]');
+            console.log(err);
+            connect('[_getToDos]', () => {})
+            returnResult(data, res)
+        }
+    }
+
+    _deleteTodo (username, id, res) {
+        var sqlStmt = "DELETE from " + username + " where ID = @ID";
+        var request = new sql.Request();
+        console.log('[_deleteTodo] Deleting todo with id ' + id);
+        const connect = this._connect
+        const logOperation = this._logOperation
+        try {
+            request.input('ID', sql.Int, id).query(sqlStmt, function(err, result) {
+                if (err) {
+                    console.log('[_deleteTodo] ' + err);
+                    connect('[_deleteTodo]', () => {})
+                    res.status(404)
+                    res.send()
+                } else {
+                    logOperation(OPERATION_DELETE, username, id)
+                    res.status(204)
+                    res.send()
+                }
+            });
+        } catch(err) {
+            console.log('[_deleteTodo::catch]');
+            console.log(err)
+            connect('[_deleteTodo]', () => {})
+            res.status(404)
+            res.send()
+        }
+    }
+
+    _createTodo (id, req, returnResult) {
+        const username = req.user.username
+        var sqlStmt = "INSERT into " + username + " VALUES (@ID, @Message);"
+        var request = new sql.Request();
+        const connect = this._connect
+        try {
+            request.input('Message', sql.VarChar(100), req.body.content).input('ID', sql.Int, id).query(sqlStmt, function(err, result) {
+                if (err) {
+                    console.log('[_createTodo] ' + err);
+                    connect('[_createTodo]', ()=>{})
+                    returnResult(false)
+                } else {
+                    returnResult(true)
+                }
+            });
+        } catch(err) {
+            console.log('[_createTodo::catch]');
+            console.log(err);
+            connect('[_createTodo]', ()=>{})
+            returnResult(false)
+        }
     }
 }
 
