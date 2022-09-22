@@ -125,6 +125,26 @@ class SqlClient {
             connect('[_createTable2]')
         }
     }
+
+    getNextId(tableName) {
+        var sqlStmt = "SELECT Max(ID) from " + tableName + ";"
+        var request = new sql.Request();
+        const connect = this._connect
+        try{
+            request.query(sqlStmt, function(err, result) {
+                if (err) {
+                    console.log('[getNextId]' + err)
+                    connect('[getNextId1]')
+                } else {
+                    console.log(result)
+                }
+            });
+        } catch (err) {
+            console.log('[getNextId::catch]')
+            console.log(err)
+            connect('[getNextId2]')
+        }
+    }
 }
 
 module.exports = SqlClient
