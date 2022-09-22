@@ -6,7 +6,6 @@ const cache = require('memory-cache');
 const cache2 = require('memory-cache');
 const {Annotation, 
     jsonEncoder: {JSON_V2}} = require('zipkin');
-const SqlClient = require('./sqlClient2');
 
 const OPERATION_CREATE = 'CREATE',
       OPERATION_DELETE = 'DELETE';
@@ -35,13 +34,7 @@ class TodoControllerSql {
         this._tracer = tracer;
         this._redisClient = redisClient;
         this._logChannel = logChannel;
-        this._connect('[constructor]', this._createTables);
-    }
-    
-    _createTables() {
-        this._createTable('admin')
-        this._createTable('johnd')
-        this._createTable('janed')
+        this._connect('[constructor]', this._createTables, this._createTable);
     }
 
     // TODO: these methods are not concurrent-safe
@@ -109,7 +102,7 @@ class TodoControllerSql {
 
     ///////////////////////////SQL methods//////////////////
     
-    _connect(msg, createTables) {
+    _connect(msg, createTables, createTable) {
         console.log(msg + " [_connect] User " + config.user + " connecting to " + config.database + " on " + config.server)
         try {
             sql.connect(config, function (err) {
@@ -117,7 +110,7 @@ class TodoControllerSql {
                     console.log(msg + ' [_connect] ' + err);
                 } else {
                     console.log(msg + ' [_connect] Connected');
-                    createTables()
+                    createTables(createTable)
                 }
             });
         } catch (err) {
@@ -127,21 +120,26 @@ class TodoControllerSql {
     }
 
     _createTable(username) {
+        console.log('[createTable] creating table ' + username)
         var sqlStmt = "if OBJECT_ID ('" + username + "', 'U') is null CREATE TABLE " + username + "(ID int, Message varchar(100));"
         var request = new sql.Request();
-        const connect = this._connect
         try {
             request.query(sqlStmt, function(err, result) {
                 if (err) {
                     console.log('[_createTable]' + err);
-                    connect('[_createTable]', () => {})
                 }
             });
         } catch(err) {
             console.log('[_createTable::catch]');
             console.log(err);
-            connect('[_createTable]', () => {})
         }
+    }
+   
+    _createTables(createTable) {
+        console.log('[createTables] creating tables')
+        createTable('admin')
+        createTable('johnd')
+        createTable('janed')
     }
 
     _getTodos (username, res, returnResult) {
