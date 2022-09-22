@@ -127,7 +127,7 @@ class SqlClient {
     }
 
     getNextId(tableName) {
-        var sqlStmt = "SELECT Max(ID) from " + tableName + ";"
+        var sqlStmt = "SELECT Max(ID) as id from " + tableName + ";"
         var request = new sql.Request();
         const connect = this._connect
         try{
@@ -136,7 +136,7 @@ class SqlClient {
                     console.log('[getNextId]' + err)
                     connect('[getNextId1]')
                 } else {
-                    console.log(result)
+                    callback(tableName, result.recordsets[0][0].id)
                 }
             });
         } catch (err) {

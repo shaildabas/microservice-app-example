@@ -46,7 +46,7 @@ class TodoControllerSql {
         this._client.create(req.user.username, todo)
         this._setNextId(req.user.username, nextId)
         this._logOperation(OPERATION_CREATE, req.user.username, id)
-        res.json(todo)
+        res.json({id: todo})
     }
 
     delete (req, res) {
@@ -75,8 +75,7 @@ class TodoControllerSql {
             this._mutex.acquire();
             nextId = cache.get(userID)
             if (nextId == null) {
-                nextId = 1
-                this._client.getNextId(userID)
+                this._client.getNextId(userID, this._setNextId)
                 this._setNextId(userID, nextId)
             }
             this._mutex.release();
