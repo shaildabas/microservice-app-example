@@ -67,6 +67,12 @@ class TodoControllerSql {
             const logOperation = this._logOperation
             this._createTodo(id, req, res, function(success, res, data) {
                 if (success) {
+                    var data = {}
+                    const todo = {
+                        content: req.body.content,
+                        id: id
+                    }
+                    data[id] = todo
                     console.log('[createTodo] todo with id ' + id + ' created successfully')
                     logOperation(OPERATION_CREATE, username, id)
                     res.json(data)
@@ -213,22 +219,16 @@ class TodoControllerSql {
                 if (err) {
                     console.log('[_createTodo] ' + err);
                     connect('[_createTodo]', ()=>{})
-                    returnResult(false, res, {})
+                    returnResult(false)
                 } else {
-                    var data = {}
-                    const todo = {
-                        content: req.body.content,
-                        id: id
-                    }
-                    data[id] = todo
-                    returnResult(true, res, data)
+                    returnResult(true)
                 }
             });
         } catch(err) {
             console.log('[_createTodo::catch]');
             console.log(err);
             connect('[_createTodo]', ()=>{})
-            returnResult(false, res, {})
+            returnResult(false)
         }
     }
 }
