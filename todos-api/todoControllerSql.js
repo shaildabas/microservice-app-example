@@ -23,13 +23,11 @@ class TodoControllerSql {
     // TODO: these methods are not concurrent-safe
     list (req, res) {
         console.log("UserName: " + req.user.username)
-        this._client.list(req.user.username, res, this.listReturn)
-    }
-    
-    listReturn (data, res) {
-        console.log('[listResult] data:')
-        console.log(data)
-        res.json(data)
+        this._client.list(req.user.username, res, function(data, res) {
+            console.log('[listResult] data:')
+            console.log(data)
+            res.json(data)
+        });
     }
 
     create (req, res) {
