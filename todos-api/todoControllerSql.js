@@ -78,7 +78,7 @@ class TodoControllerSql {
             nextId = cache.get(userID)
             if (nextId == null) {
                 this._client.getNextId(userID, this._setNextId)
-                this._setNextId(userID, nextId)
+                while (cache.get(userID) == null) {}
             }
             this._mutex.release();
         }
