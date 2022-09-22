@@ -52,9 +52,8 @@ class TodoControllerSql {
         // TODO: must be transactional and protected for concurrent access, but
         // the purpose of the whole example app it's enough
         const username = req.user.username
-        createTodo = this._createTodo
         mutex.acquire()
-        var id = cache.get(userID)
+        var id = cache.get(username)
         if (id == null) {
             console.log('[create] Id for ' + username + ' is mising')
             mutex.release()
@@ -65,14 +64,8 @@ class TodoControllerSql {
             console.log('[create] Using id: ' + id)
             mutex.release()
 
-            var data = {}
-            const todo = {
-                content: req.body.content,
-                id: id
-            }
-            data[id] = todo
             const logOperation = this._logOperation
-            this._createTodo(id, req, res, function(success) {
+            this._createTodo(id, req, res, function(success, res, data) {
                 if (success) {
                     console.log('[createTodo] todo with id ' + id + ' created successfully')
                     logOperation(OPERATION_CREATE, username, id)
@@ -92,7 +85,7 @@ class TodoControllerSql {
 
     _logOperation (opName, username, todoId) {
         gTracer.scoped(() => {
-            const traceId = this._tracer.id;
+            const traceId = gTracer.id;
             gRedisClient.publish(gLogChannel, JSON.stringify({
                 zipkinSpan: traceId,
                 opName: opName,
@@ -220,16 +213,22 @@ class TodoControllerSql {
                 if (err) {
                     console.log('[_createTodo] ' + err);
                     connect('[_createTodo]', ()=>{})
-                    returnResult(false)
+                    returnResult(false, res, {})
                 } else {
-                    returnResult(true)
+                    var data = {}
+                    const todo = {
+                        content: req.body.content,
+                        id: id
+                    }
+                    data[id] = todo
+                    returnResult(true, res, data)
                 }
             });
         } catch(err) {
             console.log('[_createTodo::catch]');
             console.log(err);
             connect('[_createTodo]', ()=>{})
-            returnResult(false)
+            returnResult(false, res, {})
         }
     }
 }
