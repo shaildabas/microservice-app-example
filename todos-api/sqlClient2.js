@@ -126,7 +126,7 @@ class SqlClient {
         }
     }
 
-    getNextId(tableName) {
+    getNextId(tableName, callback) {
         var sqlStmt = "SELECT Max(ID) as id from " + tableName + ";"
         var request = new sql.Request();
         const connect = this._connect

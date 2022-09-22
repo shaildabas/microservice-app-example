@@ -46,7 +46,9 @@ class TodoControllerSql {
         this._client.create(req.user.username, todo)
         this._setNextId(req.user.username, nextId)
         this._logOperation(OPERATION_CREATE, req.user.username, id)
-        res.json({id: todo})
+        var data = {}
+        data[id] = todo
+        res.json(data)
     }
 
     delete (req, res) {
