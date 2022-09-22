@@ -28,12 +28,15 @@ var config = {
 };
 
 var mutex = new Mutex();
+var gTracer = null;
+var gRedisClient = null;
+var gLogChannel = null;
 
 class TodoControllerSql {
     constructor({tracer, redisClient, logChannel}) {
-        this._tracer = tracer;
-        this._redisClient = redisClient;
-        this._logChannel = logChannel;
+        gTracer = tracer;
+        gRedisClient = redisClient;
+        gLogChannel = logChannel;
         this._connect('[constructor]', this._createTables, this._createTable);
     }
 
@@ -68,7 +71,7 @@ class TodoControllerSql {
                 id: id
             }
             data[id] = todo
-            logOperation = this._logOperation
+            const logOperation = this._logOperation
             this._createTodo(id, req, res, function(success) {
                 if (success) {
                     console.log('[createTodo] todo with id ' + id + ' created successfully')
@@ -84,14 +87,13 @@ class TodoControllerSql {
 
     delete (req, res) {
         console.log("Name: " + req.user.username + " taskId: " + req.params.taskId)
-        logOperation = this._logOperation
         this._deleteTodo(req.user.username, parseInt(req.params.taskId), res);
     }
 
     _logOperation (opName, username, todoId) {
-        this._tracer.scoped(() => {
+        gTracer.scoped(() => {
             const traceId = this._tracer.id;
-            this._redisClient.publish(this._logChannel, JSON.stringify({
+            gRedisClient.publish(gLogChannel, JSON.stringify({
                 zipkinSpan: traceId,
                 opName: opName,
                 username: username,
