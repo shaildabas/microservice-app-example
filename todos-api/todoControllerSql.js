@@ -67,15 +67,13 @@ class TodoControllerSql {
             const logOperation = this._logOperation
             this._createTodo(id, req, function(success) {
                 if (success) {
-                    var data = {}
                     const todo = {
                         content: req.body.content,
                         id: id
                     }
-                    data[id] = todo
                     console.log('[createTodo] todo with id ' + id + ' created successfully')
                     logOperation(OPERATION_CREATE, username, id)
-                    res.json(data)
+                    res.json(todo)
                 } else {
                     console.log('[createTodo] failed to create todo with id ' + id)
                     res.json({})
