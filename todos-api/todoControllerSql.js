@@ -58,14 +58,14 @@ class TodoControllerSql {
             console.log('[create] Id for ' + username + ' is mising')
             mutex.release()
             res.status(402)
-            res.send()
+            res.send({})
         } else {
             cache.put(username, id+1)
             console.log('[create] Using id: ' + id)
             mutex.release()
 
             const logOperation = this._logOperation
-            this._createTodo(id, req, res, function(success, res, data) {
+            this._createTodo(id, req, function(success) {
                 if (success) {
                     var data = {}
                     const todo = {
